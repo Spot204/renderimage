@@ -57,7 +57,11 @@
   letter-spacing: 0.5px;
 }
 .arch-card-body {
+  display: flex;
   padding: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  
 }
 
 /* Vùng tải ảnh kéo thả */
@@ -71,7 +75,6 @@
   cursor: pointer;
   background: #f1f5f9;
   transition: all 0.2s ease;
-  
 }
 .arch-upload-zone:hover {
   border-color: #2563eb;
