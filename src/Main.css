@@ -57,11 +57,7 @@
   letter-spacing: 0.5px;
 }
 .arch-card-body {
-  display: flex;
   padding: 1.5rem;
-  align-items: center;
-  justify-content: center;
-  
 }
 
 /* Vùng tải ảnh kéo thả */
