@@ -2,30 +2,28 @@ import React, { useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Main.css";
 import ReactCompareImage from "react-compare-image";
-// Ảnh mẫu cho kết quả AI (bạn có thể thay bằng ảnh khác)
 import aiResultImage from "./image1.png";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 function Main() {
   // ---------- STATE ----------
-  // Danh sách ảnh chờ render (URL objects)
   const [uploadedImages, setUploadedImages] = useState([]);
-  // Kết quả render: mỗi item { id, before, after, title, style, time }
   const [renderResults, setRenderResults] = useState([]);
-  // Chỉ số kết quả đang xem (null nếu chưa có)
   const [activeResultIndex, setActiveResultIndex] = useState(null);
-
-  // Các state tùy chọn (giữ nguyên từ code cũ)
   const [selectedStyle, setSelectedStyle] = useState("Hiện đại (Modern)");
-  const [selectedBuildingType, setSelectedBuildingType] = useState(
-    "Căn hộ (Apartment)"
-  );
-  const [selectedOutdoorStyle, setSelectedOutdoorStyle] = useState(
-    "Hiện đại (Modern)"
-  );
+  const [selectedBuildingType, setSelectedBuildingType] =
+    useState("Căn hộ (Apartment)");
+  const [selectedOutdoorStyle, setSelectedOutdoorStyle] =
+    useState("Hiện đại (Modern)");
+
+  // Zoom state
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [zoomImageUrl, setZoomImageUrl] = useState(null);
+  const [zoomTab, setZoomTab] = useState("after");
 
   const fileInputRef = useRef();
 
-  // ---------- XỬ LÝ UPLOAD ----------
+  // ---------- UPLOAD ----------
   const handleUploadClick = () => {
     fileInputRef.current.click();
   };
@@ -33,54 +31,55 @@ function Main() {
   const handleFileChange = (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
-    // Tạo URL cho từng file và thêm vào danh sách
     const newUrls = files.map((file) => URL.createObjectURL(file));
     setUploadedImages((prev) => [...prev, ...newUrls]);
-    // Reset input để có thể upload lại cùng file
     event.target.value = "";
   };
 
   const handleRemoveImage = (indexToRemove) => {
     setUploadedImages((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
+      prev.filter((_, index) => index !== indexToRemove),
     );
   };
 
-  // ---------- XỬ LÝ RENDER (giả lập) ----------
+  // ---------- RENDER (giả lập) ----------
   const handleRender = () => {
     if (uploadedImages.length === 0) {
       alert("Vui lòng upload ít nhất một ảnh để render!");
       return;
     }
 
-    // Tạo kết quả cho từng ảnh đang chờ
     const newResults = uploadedImages.map((imageUrl, index) => ({
       id: Date.now() + index,
       before: imageUrl,
-      after: aiResultImage, // Ảnh mẫu kết quả AI
+      after: aiResultImage,
       title: `Render ${renderResults.length + index + 1}`,
       style: selectedStyle,
       time: new Date().toLocaleString(),
     }));
 
-    // Gộp vào danh sách kết quả cũ
     const updatedResults = [...renderResults, ...newResults];
     setRenderResults(updatedResults);
-
-    // Đặt active là kết quả đầu tiên trong số mới render (hoặc cuối cùng)
     const firstNewIndex = renderResults.length;
     setActiveResultIndex(firstNewIndex);
-
-    // Xóa danh sách ảnh chờ sau khi render (tuỳ chọn, nhưng theo luồng vẫn giữ lại)
-    // setUploadedImages([]);
   };
 
-  // ---------- XỬ LÝ CLICK VÀO GALLERY ----------
+  // ---------- ZOOM ----------
+  const openZoom = (result, tab = "after") => {
+    setZoomImageUrl(tab === "before" ? result.before : result.after);
+    setZoomTab(tab);
+    setIsZoomOpen(true);
+  };
+
+  const closeZoom = () => {
+    setIsZoomOpen(false);
+    setZoomImageUrl(null);
+  };
+
   const handleSelectResult = (index) => {
     setActiveResultIndex(index);
   };
 
-  // ---------- LẤY KẾT QUẢ ĐANG XEM ----------
   const activeResult =
     activeResultIndex !== null && renderResults.length > 0
       ? renderResults[activeResultIndex]
@@ -130,7 +129,6 @@ function Main() {
                       </div>
                     </>
                   ) : (
-                    // Hiển thị danh sách ảnh chờ
                     <div className="uploaded-images-grid">
                       {uploadedImages.map((url, index) => (
                         <div key={index} className="uploaded-thumb-wrapper">
@@ -143,7 +141,6 @@ function Main() {
                           </button>
                         </div>
                       ))}
-                      {/* Nút thêm ảnh bổ sung */}
                       <div
                         className="uploaded-thumb-wrapper add-more"
                         onClick={handleUploadClick}
@@ -200,8 +197,11 @@ function Main() {
                     onChange={(e) => setSelectedStyle(e.target.value)}
                   >
                     <option>Hiện đại (Modern)</option>
+                    <option>Tối giản (Minimalism)</option>
+                    <option>Bắc Âu (Scandinavian)</option>
+                    <option>Đông Dương (Indochine)</option>
                     <option>Tân cổ điển (Neo-Classical)</option>
-                    <option>Công nghệp (Industrial)</option>
+                    <option>Công nghiệp (Industrial)</option>
                     <option>Mộc mạc (Rustic)</option>
                     <option>Nhiệt đới (Tropical)</option>
                     <option>Địa Trung Hải (Mediterranean)</option>
@@ -219,9 +219,9 @@ function Main() {
                   >
                     <option>Hiện đại (Modern)</option>
                     <option>Tối giản (Minimalism)</option>
-                    <option>Địa Trung Hải (Mediterranean)</option>
                     <option>Tân cổ điển (Neo-Classical)</option>
-                    <option>Nhà vườn/ Nhiệt đới</option>
+                    <option>Địa Trung Hải (Mediterranean)</option>
+                    <option>Nhà vườn / Nhiệt đới</option>
                   </select>
                 </div>
 
@@ -284,13 +284,35 @@ function Main() {
                 {/* Vùng so sánh lớn */}
                 <div className="arch-preview-viewport mb-4">
                   {activeResult ? (
-                    <ReactCompareImage
-                      leftImage={activeResult.before}
-                      rightImage={activeResult.after}
-                      sliderPositionPercentage={50}
-                      leftImageLabel="Before"
-                      rightImageLabel="After"
-                    />
+                    <>
+                      <ReactCompareImage
+                        leftImage={activeResult.before}
+                        rightImage={activeResult.after}
+                        sliderPositionPercentage={0.5}
+                        leftImageLabel="Before"
+                        rightImageLabel="After"
+                      />
+                      <button
+                        className="zoom-btn-overlay"
+                        onClick={() => openZoom(activeResult, "after")}
+                        title="Phóng to ảnh"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                      </button>
+                    </>
                   ) : (
                     <div className="empty-viewport-state">
                       <div className="blueprint-grid-bg"></div>
@@ -326,6 +348,10 @@ function Main() {
                             </div>
                           </div>
                           <div className="pair-title">{result.title}</div>
+                          <div className="pair-meta">
+                            <span className="meta-style">{result.style}</span>
+                            <span className="meta-time">{result.time}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -336,6 +362,80 @@ function Main() {
           </div>
         </div>
       </div>
+
+      {/* Modal Zoom */}
+      {isZoomOpen && zoomImageUrl && (
+        <div className="zoom-modal-overlay" onClick={closeZoom}>
+          <div
+            className="zoom-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="zoom-close-btn" onClick={closeZoom}>
+              ×
+            </button>
+
+            {/* Tabs chọn Before / After */}
+            <div className="zoom-tabs">
+              <button
+                className={zoomTab === "before" ? "active" : ""}
+                onClick={() => {
+                  setZoomTab("before");
+                  if (activeResult) setZoomImageUrl(activeResult.before);
+                }}
+              >
+                Ảnh gốc
+              </button>
+              <button
+                className={zoomTab === "after" ? "active" : ""}
+                onClick={() => {
+                  setZoomTab("after");
+                  if (activeResult) setZoomImageUrl(activeResult.after);
+                }}
+              >
+                Ảnh AI
+              </button>
+            </div>
+
+            <TransformWrapper
+              initialScale={1}
+              minScale={0.5}
+              maxScale={4}
+              centerOnInit
+            >
+              {({ zoomIn, zoomOut, resetTransform }) => (
+                <>
+                  <div className="zoom-controls">
+                    <button onClick={() => zoomIn()}>+</button>
+                    <button onClick={() => zoomOut()}>−</button>
+                    <button onClick={() => resetTransform()}>⟲</button>
+                  </div>
+                  <TransformComponent
+                    wrapperStyle={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <img
+                      src={zoomImageUrl}
+                      alt="Zoom"
+                      style={{
+                        width: "80%",
+                        height: "80%",
+                        objectFit: "contain",
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                      }}
+                    />
+                  </TransformComponent>
+                </>
+              )}
+            </TransformWrapper>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
