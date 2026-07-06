@@ -66,8 +66,8 @@
   border-radius: 8px;
   padding: 2.5rem 1.5rem;
   text-align: center;
-  min-height: 300px;         /* chiều cao tối thiểu */
-  max-width: 400px;
+  min-height: 200px;         /* chiều cao tối thiểu */
+  max-width: 300px;
   cursor: pointer;
   background: #f1f5f9;
   transition: all 0.2s ease;
