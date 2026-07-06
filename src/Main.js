@@ -1,55 +1,97 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Main.css";
 import ReactCompareImage from "react-compare-image";
-import image1 from "./Screenshot 2026-07-05 215846.png";
+// Ảnh mẫu cho kết quả AI (bạn có thể thay bằng ảnh khác)
+import aiResultImage from "./image1.png";
 
 function Main() {
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [beforeImage, setBeforeImage] = useState(null);
-  const [afterImage, setAfterImage] = useState(null);
+  // ---------- STATE ----------
+  // Danh sách ảnh chờ render (URL objects)
+  const [uploadedImages, setUploadedImages] = useState([]);
+  // Kết quả render: mỗi item { id, before, after, title, style, time }
+  const [renderResults, setRenderResults] = useState([]);
+  // Chỉ số kết quả đang xem (null nếu chưa có)
+  const [activeResultIndex, setActiveResultIndex] = useState(null);
+
+  // Các state tùy chọn (giữ nguyên từ code cũ)
   const [selectedStyle, setSelectedStyle] = useState("Hiện đại (Modern)");
-  const [selectedBuildingType, setSelectedBuildingType] =
-    useState("Căn hộ (Apartment)");
-  const [selectedOutdoorStyle, setSelectedOutdoorStyle] =
-    useState("Hiện đại (Modern)");
-  const [imageCount, setImageCount] = useState(1);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [selectedBuildingType, setSelectedBuildingType] = useState(
+    "Căn hộ (Apartment)"
+  );
+  const [selectedOutdoorStyle, setSelectedOutdoorStyle] = useState(
+    "Hiện đại (Modern)"
+  );
+
   const fileInputRef = useRef();
 
-  //hàm viết gọi api render ảnh
-  const handleRenderClick = (aiImageUrl) => {
-    handleCheckUploadedImage();
-    //setAfterImage(aiImageUrl);
-    setAfterImage(image1);
-    alert("Render ảnh thành công! Vui lòng kiểm tra kết quả.");
-  };
-
-  const handleCheckUploadedImage = () => {
-    if (!uploadedImage) {
-      alert("Vui lòng upload ảnh trước khi kiểm tra!");
-    }
-  };
-
-  const handleImageUpload = (event) => {
+  // ---------- XỬ LÝ UPLOAD ----------
+  const handleUploadClick = () => {
     fileInputRef.current.click();
   };
+
   const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setUploadedImage(imageUrl);
-      setBeforeImage(imageUrl);
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    // Tạo URL cho từng file và thêm vào danh sách
+    const newUrls = files.map((file) => URL.createObjectURL(file));
+    setUploadedImages((prev) => [...prev, ...newUrls]);
+    // Reset input để có thể upload lại cùng file
+    event.target.value = "";
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setUploadedImages((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  // ---------- XỬ LÝ RENDER (giả lập) ----------
+  const handleRender = () => {
+    if (uploadedImages.length === 0) {
+      alert("Vui lòng upload ít nhất một ảnh để render!");
+      return;
     }
+
+    // Tạo kết quả cho từng ảnh đang chờ
+    const newResults = uploadedImages.map((imageUrl, index) => ({
+      id: Date.now() + index,
+      before: imageUrl,
+      after: aiResultImage, // Ảnh mẫu kết quả AI
+      title: `Render ${renderResults.length + index + 1}`,
+      style: selectedStyle,
+      time: new Date().toLocaleString(),
+    }));
+
+    // Gộp vào danh sách kết quả cũ
+    const updatedResults = [...renderResults, ...newResults];
+    setRenderResults(updatedResults);
+
+    // Đặt active là kết quả đầu tiên trong số mới render (hoặc cuối cùng)
+    const firstNewIndex = renderResults.length;
+    setActiveResultIndex(firstNewIndex);
+
+    // Xóa danh sách ảnh chờ sau khi render (tuỳ chọn, nhưng theo luồng vẫn giữ lại)
+    // setUploadedImages([]);
   };
-  const handleRemoveImage = () => {
-    setUploadedImage(null);
+
+  // ---------- XỬ LÝ CLICK VÀO GALLERY ----------
+  const handleSelectResult = (index) => {
+    setActiveResultIndex(index);
   };
+
+  // ---------- LẤY KẾT QUẢ ĐANG XEM ----------
+  const activeResult =
+    activeResultIndex !== null && renderResults.length > 0
+      ? renderResults[activeResultIndex]
+      : null;
+
+  // ---------- RENDER ----------
   return (
-    <div className="architecture-app-container py-5">
+    <div className="architecture-app-container">
       <div className="container-fluid px-4">
         <div className="row g-4 align-items-start">
-          {/* CỘT TRÁI: ĐIỀU KHIỂN & CẤU HÌNH */}
+          {/* ===== CỘT TRÁI: ĐIỀU KHIỂN ===== */}
           <div className="col-lg-4 col-xl-3">
             {/* Bước 1: Upload */}
             <div className="arch-card mb-4">
@@ -59,23 +101,9 @@ function Main() {
               </div>
               <div className="arch-card-body">
                 <div className="arch-upload-zone">
-                  {uploadedImage ? (
-                    <div className="image-wrapper">
-                      <img
-                        src={uploadedImage}
-                        alt="Uploaded"
-                        className="img-fluid"
-                      />
-                      <button
-                        className="remove-btn"
-                        onClick={handleRemoveImage}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : (
+                  {uploadedImages.length === 0 ? (
                     <>
-                      <div onClick={() => handleImageUpload()}>
+                      <div onClick={handleUploadClick}>
                         <div className="upload-icon-wrapper mb-2">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -97,10 +125,32 @@ function Main() {
                           Tải lên sơ đồ mặt bằng
                         </p>
                         <span className="upload-hint">
-                          Hỗ trợ định dạng định dạng: PNG, JPG
+                          Hỗ trợ định dạng: PNG, JPG
                         </span>
                       </div>
                     </>
+                  ) : (
+                    // Hiển thị danh sách ảnh chờ
+                    <div className="uploaded-images-grid">
+                      {uploadedImages.map((url, index) => (
+                        <div key={index} className="uploaded-thumb-wrapper">
+                          <img src={url} alt={`Ảnh ${index + 1}`} />
+                          <button
+                            className="remove-thumb-btn"
+                            onClick={() => handleRemoveImage(index)}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      {/* Nút thêm ảnh bổ sung */}
+                      <div
+                        className="uploaded-thumb-wrapper add-more"
+                        onClick={handleUploadClick}
+                      >
+                        <span>+</span>
+                      </div>
+                    </div>
                   )}
                   <input
                     type="file"
@@ -108,6 +158,7 @@ function Main() {
                     onChange={handleFileChange}
                     style={{ display: "none" }}
                     ref={fileInputRef}
+                    multiple
                   />
                 </div>
               </div>
@@ -120,7 +171,6 @@ function Main() {
                 <h5 className="arch-card-title">Tham Số Phối Cảnh</h5>
               </div>
               <div className="arch-card-body">
-                {/* Thông báo AI tinh gọn */}
                 <div className="ai-info-alert mb-4">
                   <div className="ai-badge">AI PROCESSOR</div>
                   <p className="m-0">
@@ -150,9 +200,13 @@ function Main() {
                     onChange={(e) => setSelectedStyle(e.target.value)}
                   >
                     <option>Hiện đại (Modern)</option>
-                    <option>Tối giản (Minimalism)</option>
-                    <option>Bắc Âu (Scandinavian)</option>
-                    <option>Đông Dương (Indochine)</option>
+                    <option>Tân cổ điển (Neo-Classical)</option>
+                    <option>Công nghệp (Industrial)</option>
+                    <option>Mộc mạc (Rustic)</option>
+                    <option>Nhiệt đới (Tropical)</option>
+                    <option>Địa Trung Hải (Mediterranean)</option>
+                    <option>Japandi</option>
+                    <option>Zen</option>
                   </select>
                 </div>
 
@@ -165,12 +219,15 @@ function Main() {
                   >
                     <option>Hiện đại (Modern)</option>
                     <option>Tối giản (Minimalism)</option>
+                    <option>Địa Trung Hải (Mediterranean)</option>
                     <option>Tân cổ điển (Neo-Classical)</option>
+                    <option>Nhà vườn/ Nhiệt đới</option>
                   </select>
                 </div>
+
                 <button
                   className="btn-arch-primary w-100"
-                  onClick={() => handleRenderClick()}
+                  onClick={handleRender}
                 >
                   <span>KHỞI TẠO KHÔNG GIAN 3D</span>
                   <svg
@@ -191,7 +248,7 @@ function Main() {
             </div>
           </div>
 
-          {/* CỘT PHẢI: KHÔNG GIAN HIỂN THỊ KẾT QUẢ RENDER */}
+          {/* ===== CỘT PHẢI: HIỂN THỊ KẾT QUẢ ===== */}
           <div className="col-lg-8 col-xl-9">
             <div className="arch-card viewport-card">
               <div className="arch-card-header d-flex justify-content-between align-items-center">
@@ -223,14 +280,16 @@ function Main() {
                 </div>
               </div>
 
-              <div className="arch-card-body ">
-                {/* Vùng xem ảnh lớn */}
+              <div className="arch-card-body">
+                {/* Vùng so sánh lớn */}
                 <div className="arch-preview-viewport mb-4">
-                  {afterImage ? (
+                  {activeResult ? (
                     <ReactCompareImage
-                      leftImage={beforeImage}
-                      rightImage={afterImage}
+                      leftImage={activeResult.before}
+                      rightImage={activeResult.after}
                       sliderPositionPercentage={50}
+                      leftImageLabel="Before"
+                      rightImageLabel="After"
                     />
                   ) : (
                     <div className="empty-viewport-state">
@@ -242,6 +301,36 @@ function Main() {
                     </div>
                   )}
                 </div>
+
+                {/* Gallery kết quả */}
+                {renderResults.length > 0 && (
+                  <div className="results-gallery-section mt-4">
+                    <h6 className="arch-gallery-title mb-3">
+                      Lịch sử Render ({renderResults.length} kết quả)
+                    </h6>
+                    <div className="results-grid-scroll">
+                      {renderResults.map((result, index) => (
+                        <div
+                          key={result.id}
+                          className={`result-pair-card ${index === activeResultIndex ? "active" : ""}`}
+                          onClick={() => handleSelectResult(index)}
+                        >
+                          <div className="pair-thumbnails-preview">
+                            <div className="mini-thumb">
+                              <img src={result.before} alt="Gốc" />
+                              <span className="thumb-tag tag-before">Gốc</span>
+                            </div>
+                            <div className="mini-thumb">
+                              <img src={result.after} alt="AI" />
+                              <span className="thumb-tag tag-after">3D</span>
+                            </div>
+                          </div>
+                          <div className="pair-title">{result.title}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
