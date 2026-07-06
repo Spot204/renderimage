@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Main.css";
 import ReactCompareImage from "react-compare-image";
@@ -6,6 +6,7 @@ import aiResultImage from "./image1.png";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 function Main() {
+
   // ---------- STATE ----------
   const [uploadedImages, setUploadedImages] = useState([]);
   const [renderResults, setRenderResults] = useState([]);
@@ -86,6 +87,36 @@ function Main() {
       : null;
 
   // ---------- RENDER ----------
+
+  // -----------API--------------
+  // const handleApiCall = async (imageUrls) => {
+  //   try {
+  //     const response = await fetch("https://api.example.com/endpoint", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         // Add your request body here
+  //         imageUrls: imageUrls
+  //       }),
+  //     });
+  //     const data = await response.json();
+  //     // Handle the API response
+  //   } catch (error) {
+  //     console.error("Error calling API:", error);
+  //   }
+  // };
+
+  // -----------Download All Images--------------
+  const handleDownloadAll = () => {
+    if (renderResults.length === 0) {
+      alert("Không có kết quả để tải xuống!");
+      return;
+    }
+    alert("Tính năng tải xuống tất cả ảnh chưa được triển khai.");
+
+  }
   return (
     <div className="architecture-app-container">
       <div className="container-fluid px-4">
@@ -259,7 +290,7 @@ function Main() {
                   </h5>
                 </div>
                 <div className="viewport-actions">
-                  <button className="btn-arch-secondary btn-sm">
+                  <button className="btn-arch-secondary btn-sm" onClick={handleDownloadAll}>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
